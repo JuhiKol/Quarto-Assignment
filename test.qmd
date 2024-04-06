@@ -1,0 +1,144 @@
+---
+title: "Juhi Quarto Document"
+format: html
+editor: visual
+---
+
+```{r echo = FALSE, message=FALSE, warning=FALSE}
+
+library(readr)
+unicef_indicator_1_1_ <- read_csv("C:/Users/Mandar Chavan/Downloads/unicef_indicator_1 (1).csv")
+
+
+unicef_indicator_2 <- read_csv("C:/Users/Mandar Chavan/Downloads/unicef_indicator_2.csv")
+
+metadata <- read_csv("C:/Users/Mandar Chavan/Downloads/unicef_metadata.csv")
+
+
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+
+
+
+library(rnaturalearth)
+library(sf)
+library(ggplot2)
+
+
+
+world <- rnaturalearth::ne_countries(scale = "medium", returnclass = "sf")
+merged_data <- merge(world, unicef_indicator_1_1_, by.x = "iso_a3", by.y = "alpha_3_code", all.x = TRUE)
+ggplot() +
+  geom_sf(data = merged_data, aes(fill = obs_value)) +
+  scale_fill_gradient(low = "lightblue", high = "darkblue") +
+  labs(title = "Global Average Statistic of Children Suffering From At Least 1 Form of Deprivation", fill = "Indicator Value") +
+  theme_void()
+
+
+
+
+
+```
+
+### 
+
+[*The map featured in the "Global Child Welfare Dashboard" provides a global overview of the average rates of children experiencing at least one type of deprivation, covering both male and female genders. This crucial statistic highlights the disparity in child welfare across different regions, with the deprivation rates spanning from a maximum of **83.47%** to a minimum of **2.64%.** This wide range illustrates the significant variance in the conditions and challenges faced by children worldwide, emphasizing the acute levels of need in certain areas compared to others where children are far less likely to encounter such hardships*.]{style="color: blue;"}
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+library(ggplot2)
+countries <- c("Chad", "Ethiopia", "Niger", "India", "Madagascar")
+
+selected_countries <- metadata[metadata$country %in% countries, ]
+selected_countries <- selected_countries[complete.cases(selected_countries$"Life expectancy at birth, total (years)"), ]
+
+avg_life_expectancy <- aggregate(selected_countries$"Life expectancy at birth, total (years)", 
+                                 by = list(selected_countries$country), 
+                                 FUN = mean,
+                                 na.rm = TRUE)
+
+
+names(avg_life_expectancy) <- c("Country", "Average Life Expectancy")
+
+print(avg_life_expectancy)
+
+ggplot(avg_life_expectancy, aes(x = Country, y = `Average Life Expectancy`, fill = Country)) +
+  geom_bar(stat = "identity") +
+  labs(x = "Country", y = "Average Life Expectancy", title = "Average Life Expectancy by Country") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  scale_fill_manual(values = rainbow(length(avg_life_expectancy$Country)))
+
+
+```
+
+[*The area graph illustrates the complex relationships between GDP per capita, child deprivation rates, life expectancy, and inflation in India, Chad, Ethiopia, and Niger. The data shows that with a GDP of **1,590** USD per capita, India has the greatest GDP, while Niger has the lowest, at **460** USD per capita. When looking at inflation rates, Niger has the lowest at a meagre **0.45%,** while Ethiopia has the most at **6.62%**. Comparing the two countries, we find that India has the highest life expectancy at **69.63** years, while Chad has the lowest at **51.21** years. Moreover, the child welfare situation in these nations is starkly shown by the proportion of children experiencing at least one kind of deprivation: **83.47%** in Niger and **80.45%** in Chad, **73.13%** in Ethiopia, and **60.27%** in India. The graph shows how different nations are and how economic factors affect social results; it also stresses how important it is to intervene specifically to improve child welfare and people's quality of life*.]{style="color: blue;"}
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+#For five countries
+
+library(ggplot2)
+
+selected_countries <- c("Chad", "Ethiopia", "Niger", "India", "Madagascar")
+
+filtered_data <- unicef_indicator_2[unicef_indicator_2$country %in% selected_countries, ]
+library(lubridate)
+
+filtered_data$time_period <- as.Date(filtered_data$time_period, format = "%d-%m-%Y", tryFormats = c("%Y"))
+
+ggplot(filtered_data, aes(x = time_period, y = obs_value)) +
+  geom_point() +  # Add points
+  geom_smooth(method = "lm", se = FALSE, color = "red") +  
+  labs(title = "Scatterplot with Linear Regression Line",
+       x = "Time Period",
+       y = "Children Deprivation (under 5 years old)") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
+
+```
+
+[*A comparative examination of the average life expectancy of men and females in countries such as **India, Chad, Ethiopia, and Niger** are shown in the form of a bar graph. This analysis highlights the differences in health outcomes that exist between the sexes. This study investigates the male-to-female ratio of life expectancy in these impacted nations, indicating a wide variety of values, ranging from Chad's lowest average of 51.21 years to the highest average of 69.64 years. As an additional feature, the graph integrates data on GDP per capita and total population in addition to life expectancy, providing a comprehensive perspective of the economic and demographic environment of each nation in relation to health indices.*]{style="color: blue;"}
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+library(ggplot2)
+library(dplyr)
+
+
+countries <- c("Chad", "Ethiopia", "Niger", "India", "Madagascar")
+
+
+selected_countries <- metadata %>% 
+  filter(country %in% countries)
+
+selected_countries <- selected_countries %>%
+  filter(!is.na(`Population, total`) & !is.na(`Military expenditure (% of GDP)`))
+
+p_population <- ggplot(selected_countries, aes(x = year, y = `Population, total`, color = country)) +
+  geom_line(size = 1) +
+  labs(x = "Year", y = "Population", color = "Country") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  scale_y_continuous(labels = scales::comma)
+
+
+p_population
+
+```
+
+[*The graph shows population trends from **1960** to slightly past **2020** for five countries: **Chad, Ethiopia, India, Madagascar, and Niger**. India's population displays a sharp increase, crossing the 1 billion mark, while the other countries' growths are comparatively modest, appearing as relatively flat lines at the bottom of the graph.*]{style="color: blue;"}
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+p_military_expenditure <- ggplot(selected_countries, aes(x = year, y = `Military expenditure (% of GDP)`, color = country)) +
+  geom_line(size = 1, linetype = "dashed") +
+  labs(x = "Year", y = "Military Expenditure (% of GDP)", color = "Country") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+p_military_expenditure
+```
+
+[*This graph presents the military expenditure as a percentage of GDP for **Chad, Ethiopia, India, Madagascar, and Niger** from **1960 to beyond 2020.** Each country's trend is shown in a different color and style of line. The graph shows fluctuations in military spending relative to the size of the countries' economies. Peaks in expenditure can be seen, particularly with Ethiopia (dotted red line) around the 2000s, showing a military spending surge above 5% of its GDP. Other countries have varied patterns, but all remain below 10% of GDP. The y-axis is marked from 0 to 10%, indicating the scale of military expenditure against GDP, while the x-axis shows the timeline from 1960 onwards.* ]{style="color: blue"}
+
+### Conclusion:
+
+[What the "Global Child Welfare Dashboard" does is shed light on how child welfare is doing all around the world right now. This highlights the crucial need for comprehensive initiatives that work to address the underlying causes of child deprivation, push for fair economic growth, and make certain that the well-being of children is at the forefront of both international and national agendas. A world in which every kid, regardless of their geographical location or economic background, has the chance to flourish is the goal of the dashboard, which calls for a concerted effort to address the disparity between those who are the least fortunate and those who are the most fortunate. ]{style="color: blue"}
